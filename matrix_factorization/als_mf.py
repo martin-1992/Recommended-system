@@ -30,6 +30,7 @@ class ALS(ModelBase):
         super(ALS, self).__init__()
         self.n_user = n_user
         self.n_item = n_item
+        # 潜在特征
         self.n_feature = n_feature
         self.reg = float(reg)
         self.rand_state = RandomState(seed)
@@ -42,9 +43,10 @@ class ALS(ModelBase):
         self.ratings_csr_ = None
         self.ratings_csc_ = None
 
-        # 生成随机用户矩阵，大小为n_user * n_feature
+        # 生成随机U矩阵，大小为n_user * n_feature
         self.user_features_ = 0.1 * self.rand_state.rand(n_user, n_feature)
-        # 生成随机项目矩阵，大小为n_item * n_feature，用于做预测，并调整参数权重
+        # 生成随机M矩阵，大小为n_item * n_feature，用于做预测，并调整参数权重
+        # 利用这两个矩阵U和M的内积去近似用户评分矩阵
         self.item_features_ = 0.1 * self.rand_state.rand(n_item, n_feature)
 
     # 更新用户参数矩阵，求user的梯度
@@ -56,7 +58,7 @@ class ALS(ModelBase):
             # 选取第i位用户ID对应的每个item_id的非零评分来做训练，零的部分则用来做预测
             # http://blog.csdn.net/roler_/article/details/42395393
             # _表示对应的行维度，都为i，表示同一个用户ID行
-            # item_idx表示列维度，即不同的项目ID
+            # item_idx表示列维度，即不同且非零的项目ID
             _, item_idx = self.ratings_csr_[i, :].nonzero()
             # 非零的项目ID
             n_u = item_idx.shape[0]
@@ -64,7 +66,7 @@ class ALS(ModelBase):
                 # 记录全部项目都没评分的用户ID
                 logger.debug('no ratings for user {:d}'.format(i))
                 continue
-            # 选取对应的item矩阵的特征参数
+            # 选取对应的item矩阵的特征参数, 行为非零的项目ID，列为潜在特征n_feature
             item_features = self.item_features_.take(item_idx, axis=0)
             # 对评分去均值化
             ratings = self.ratings_csr_[i, :].data - self.mean_rating_
@@ -91,7 +93,7 @@ class ALS(ModelBase):
 
             user_features = self.user_features_.take(user_idx, axis=0)
             ratings = self.ratings_csc_[:, j].data - self.mean_rating_
-            # f = sum(r(ij) - u(i).T * m(j))^2 + λ(sum(n(ui)*||u(i)||^2) + sum(n(mj)*||m(j)||^2))
+            # f = 1/2*(sum(r(ij) - u(i).T * m(j))^2) + λ/2*(sum(n(ui)*||u(i)||^2)) + λ/2*(sum(n(mj)*||m(j)||^2))
             # 对f求I(kj)的梯度
             A_j = (np.dot(user_features.T, user_features) + self.reg * n_i * np.eye(self.n_feature))
             V_j = np.dot(user_features.T, ratings)
@@ -99,7 +101,8 @@ class ALS(ModelBase):
             self.item_features_[j, :] = np.dot(inv(A_j), V_j)
 
     def fit(self, ratings, n_iters=50):
-        # 全局评分的均值
+        # ratings有三列，[user_id, item_id, rating]
+        # 取第三列rating的全局评分的均值，用于去均值化
         self.mean_rating_ = np.mean(ratings.take(2, axis=1))
         # user-item矩阵，行为user_id，列为item_id，值为评分，每行对应一个ID，从0开始，所以ID-1
         self.ratings_csr_ = build_user_item_matrix(self.n_user, self.n_item, ratings)
@@ -127,7 +130,9 @@ class ALS(ModelBase):
 
     # 使用user和item进行预测
     def predict(self, data):
+        # data[0]为user_id
         u_features = self.user_features_.take(data.take(0, axis=1), axis=0)
+        # data[1]为item_id
         i_features = self.item_features_.take(data.take(1, axis=1), axis=0)
         preds = np.sum(u_features * i_features, 1) + self.mean_rating_
 
@@ -144,15 +149,15 @@ class ALS(ModelBase):
 
 if __name__ == '__main__':
     # 载入文件
-    file_path = r'D:\PycharmProjects\algorithm\matrix_factorization\recommend-master\martin\raw_data/'
-    with gzip.open(file_path + 'ml_100k_ratings.pkl.gz') as f:
+    with gzip.open('raw_data/ml_100k_ratings.pkl.gz') as f:
         ratings = cPickle.load(f, encoding='latin1')
 
     # ID从0开始
     ratings[:, 0] = ratings[:, 0] - 1
     ratings[:, 1] = ratings[:, 1] - 1
 
-    als = ALS(n_user=943, n_item=1682, n_feature=10, reg=1e-2, max_rating=5.0, min_rating=1.0, seed=0)
+    als = ALS(n_user=943, n_item=1682, n_feature=10, reg=1e-2,
+              max_rating=5.0, min_rating=1.0, seed=0)
     # 建模拟合数据
     user_features, item_features = als.fit(ratings, n_iters=5)
     # 预测率

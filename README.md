@@ -6,7 +6,7 @@
 - 误差等式为平方差公式，即真实值和预测值的评分差（R-U*M），为了防止过拟合，加上正则项，惩罚过大参数；
 - 固定M矩阵，使用梯度下降，对误差等式f(U, M)求U梯度；
 - 同样固定U矩阵，使用梯度下降，对误差等式f(U, M)求M梯度；
-- 预测值为U*M，不断迭代上面两步，直到最近两次误差收敛到一个阈值时，停止更新参数（具体数学推导参考matrix factorization 笔记）
+- 预测值为U*M，不断迭代上面两步，直到最近两次误差收敛到一个阈值时，停止更新参数（具体数学推导参考matrix factorization 笔记及论文Large-scale Parallel Collaborative Filtering the Netflix Prize）
 
 注意的是，进行参数更新的已评分的item_id和user_id的实例，即拟合已评分的user-item矩阵，然后去预测未评分的user-item的评分。
 

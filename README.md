@@ -3,7 +3,7 @@
 ### als_mf算法流程：
 - 初始化矩阵U和M，U矩阵大小为user_id * n_feature，其中user_id为用户id数，n_fearure为潜在特征；同理M矩阵大小为item_id * n_feature，其中item_id为项目id数；
 - 生成user_id - item_id矩阵，其中行为user_id，列为item_id，值为用户评分rating，减去全局评分的均值；
-- 误差公式为：$\sum_{(i, j) \in I}(r_{ij}-u_{i}^{T}m_{j})^{2}$，为了防止过拟合，加上正则项，惩罚过大参数：$$f(U, M) =\sum_{(i, j) \in I}(r_{ij}-u_{i}^{T}m_{j})^{2} + \lambda (\sum_{i} \eta _{ui} \left \| \text {u}_{i}^{2} \right \|) + \lambda (\sum_{i} \eta _{mj} \left \| \text {m}_{j}^{2} \right \|) $$ 其中$n_{ui}$为第i位用户的评分数，同理$n_{mj}$为第j个项目的评分数；
+- 误差公式为：http://www.forkosh.com/mathtex.cgi?\Large $\sum_{(i, j) \in I}(r_{ij}-u_{i}^{T}m_{j})^{2}$，为了防止过拟合，加上正则项，惩罚过大参数：$$f(U, M) =\sum_{(i, j) \in I}(r_{ij}-u_{i}^{T}m_{j})^{2} + \lambda (\sum_{i} \eta _{ui} \left \| \text {u}_{i}^{2} \right \|) + \lambda (\sum_{i} \eta _{mj} \left \| \text {m}_{j}^{2} \right \|) $$ 其中$n_{ui}$为第i位用户的评分数，同理$n_{mj}$为第j个项目的评分数；
 - 固定M矩阵，使用梯度下降，对f(U, M)求梯度$\frac{\partial f}{\partial  u_{ki}} = 0$，即：
 $$\frac{\partial (\sum_{(i, j) \in I}(r_{ij} - \mathbf {u_{i}^{T}m_{j}})^{2} + \lambda (\sum_{i} \eta _{ui} \left \| \text {u}_{i}^{2} \right \|) + \lambda (\sum_{i} \eta _{mj} \left \| \text {m}_{j}^{2} \right \|))}{\partial u_{ki}} = 0\\
 -2\sum_{j \in I_{i}}(r_{ij} - \mathbf {u_{i}^{T}m_{j}})m_{kj} + 2 \lambda \eta _{ui} \text {u}_{ki} = 0\\

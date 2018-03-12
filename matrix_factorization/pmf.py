@@ -9,7 +9,6 @@ Reference paper:
     Neural Information Processing Systems 21 (NIPS 2008). Jan. 2008.
 
 Reference Matlab code: http://www.cs.toronto.edu/~rsalakhu/BPMF.html
-"""
 '''
 
 
@@ -60,7 +59,6 @@ class PMF(ModelBase):
         # 生成随机项目矩阵，大小为n_item * n_feature，用于做预测，并调整参数权重
         self.item_features_ = 0.1 * self.random_state.rand(n_item, n_feature)
 
-
     def fit(self, ratings, n_iters=50):
         # 全局电影评分的均值
         self.mean_rating_ = np.mean(ratings[:, 2])
@@ -69,10 +67,10 @@ class PMF(ModelBase):
         batch_num = int(np.ceil(float(ratings.shape[0] / self.batch_size)))
         logger.debug('batch count = {}'.format(batch_num + 1))
 
-        # 动量矩阵
+        # 初始化动量矩阵
         u_feature_mom = np.zeros((self.n_user, self.n_feature))
         i_feature_mom = np.zeros((self.n_item, self.n_feature))
-        # 梯度矩阵
+        # 初始化梯度矩阵
         u_feature_grads = np.zeros((self.n_user, self.n_feature))
         i_feature_grads = np.zeros((self.n_item, self.n_feature))
 
@@ -167,8 +165,7 @@ class PMF(ModelBase):
 
 if __name__ == '__main__':
     # 载入文件
-    file_path = r'./martin/raw_data/'
-    with gzip.open(file_path + 'ml_100k_ratings.pkl.gz') as f:
+    with gzip.open('raw_data/ml_100k_ratings.pkl.gz') as f:
         ratings = cPickle.load(f, encoding='latin1')
 
     # ID从0开始

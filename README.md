@@ -15,7 +15,7 @@
 ### pmf算法流程：
 pmf的算法流程与als_mf算法流程类似，除了最小化误差等式换为最小化能量函数，具体数学推导可看matrix factorization 笔记及论文Probabilistic Matrix Factorization - NIPS Proceedings）
 
-reference: <br />
+### reference: <br />
 https://github.com/chyikwei/recommend <br />
 http://www.quuxlabs.com/blog/2010/09/matrix-factorization-a-simple-tutorial-and-implementation-in-python/ <br />
 http://blog.csdn.net/shenxiaolu1984/article/details/50372909 <br />

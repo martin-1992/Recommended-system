@@ -23,6 +23,7 @@ pmf的算法流程与als_mf算法流程类似，除了最小化误差等式换�
 
 ### reference: <br />
 https://github.com/chyikwei/recommend <br />
+https://github.com/asaini/Apriori <br />
 http://www.quuxlabs.com/blog/2010/09/matrix-factorization-a-simple-tutorial-and-implementation-in-python/ <br />
 http://blog.csdn.net/shenxiaolu1984/article/details/50372909 <br />
 Probabilistic Matrix Factorization - NIPS Proceedings <br />

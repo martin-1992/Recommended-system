@@ -9,21 +9,22 @@
 - 同样固定U矩阵，使用梯度下降，对误差等式f(U, M)求M梯度；
 - 预测值为U*M，不断迭代上面两步，直到最近两次误差收敛到一个阈值时，停止更新参数（具体数学推导可看matrix factorization 笔记及论文Large-scale Parallel Collaborative Filtering the Netflix Prize）
 
-注意的是，进行参数更新的已评分的item_id和user_id的实例，即拟合已评分的user-item矩阵，然后去预测未评分的user-item的评分。
+注意的是，进行参数更新的已评分的item_id和user_id的实例，即拟合已评分的user-item矩阵，然后去预测未评分的user-item的评分。 <br />
+代码参考：https://github.com/chyikwei/recommend
 
 ### pmf算法流程：
-pmf的算法流程与als_mf算法流程类似，除了最小化误差等式换为最小化能量函数，具体数学推导可看matrix factorization 笔记及论文Probabilistic Matrix Factorization - NIPS Proceedings）
+pmf的算法流程与als_mf算法流程类似，除了最小化误差等式换为最小化能量函数，具体数学推导可看matrix factorization 笔记及论文Probabilistic Matrix Factorization - NIPS Proceedings） <br />
+代码参考：https://github.com/chyikwei/recommend
 
 ### collaborative-filtering.py
 来源：《集体智慧编程》第二章
 
 #### apriori算法流程：
 - 支持度：support(A=>B)：A和B的同时出现的次数 / 总样本数
-- 置信度：confidence(A=>B)：P(B | A) = support(A=>B) / support(A)
+- 置信度：confidence(A=>B)：P(B | A) = support(A=>B) / support(A) <br />
+代码参考：https://github.com/asaini/Apriori
 
 ### reference: <br />
-https://github.com/chyikwei/recommend <br />
-https://github.com/asaini/Apriori <br />
 http://www.quuxlabs.com/blog/2010/09/matrix-factorization-a-simple-tutorial-and-implementation-in-python/ <br />
 http://blog.csdn.net/shenxiaolu1984/article/details/50372909 <br />
 Probabilistic Matrix Factorization - NIPS Proceedings <br />

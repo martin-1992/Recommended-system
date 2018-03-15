@@ -17,6 +17,10 @@ pmf的算法流程与als_mf算法流程类似，除了最小化误差等式换�
 ### collaborative-filtering.py
 来源：《集体智慧编程》第二章
 
+#### apriori算法流程：
+- 支持度：support(A=>B)：A和B的同时出现的次数 / 总样本数
+- 置信度：confidence(A=>B)：P(B | A) = support(A=>B) / support(A)
+
 ### reference: <br />
 https://github.com/chyikwei/recommend <br />
 http://www.quuxlabs.com/blog/2010/09/matrix-factorization-a-simple-tutorial-and-implementation-in-python/ <br />

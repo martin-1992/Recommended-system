@@ -34,7 +34,7 @@ Large-scale Parallel Collaborative Filtering for the Netflix Prize <br />
 
 
 #### factorization machines算法：
-其思想是生成一个多项式，以二项式为例，即两两变量相乘，并乘以权重，这时使用矩阵分解技术，将二项式的权重拆分成两个，一是能共享参数，二是能减少稀疏性
+其思想是生成一个多项式，以二项式为例，即两两变量相乘，并乘以权重，这时使用矩阵分解技术，将二项式的权重拆分成两个，一是能共享参数，二是能减少稀疏性 <br >
 资料主要参考美团这篇：https://tech.meituan.com/deep-understanding-of-ffm-principles-and-practices.html <br >
 Factorization Machines: http://www.algo.uni-konstanz.de/members/rendle/pdf/Rendle2010FM.pdf
 

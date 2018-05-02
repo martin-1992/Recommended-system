@@ -12,7 +12,7 @@ from tqdm import tqdm_notebook as tqdm
 
 ###########################################################################
 # 数据转换
-def vectorize_dic(dic, ix=None, p=None):
+def vectorize_dic(dic, ix=None, p=None, n=0, g=0):
     '''
     对列表中对每一列（每个内部列表是一组与特征对应的值）创建一个csr矩阵。
 
@@ -25,10 +25,6 @@ def vectorize_dic(dic, ix=None, p=None):
     if ix == None:
         ix = dict()
 
-    # 样本数(行数)
-    n = len(dic.values()[0])
-    # 特征数(列数)
-    g = len(dic.keys())
     # 矩阵大小
     nz = n * g
 
@@ -77,22 +73,6 @@ def batcher(X, y=None, batch_size=-1):
             yield (ret_x, ret_y)
 
 
-def batcher(X_, y_=None, batch_size=-1):
-    n_samples = X_.shape[0]
-
-    if batch_size == -1:
-        batch_size = n_samples
-    if batch_size < 1:
-       raise ValueError('Parameter batch_size={} is unsupported'.format(batch_size))
-
-    for i in range(0, n_samples, batch_size):
-        upper_bound = min(i + batch_size, n_samples)
-        ret_x = X_[i:upper_bound]
-        ret_y = None
-        if y_ is not None:
-            ret_y = y_[i:i + batch_size]
-            yield (ret_x, ret_y)
-
 
 
 if __name__ == '__main__':
@@ -132,10 +112,10 @@ if __name__ == '__main__':
 
     # w和x相乘, 然后使用reduce_sum, 沿着某个维度求和
     # 如a = [[1, 1, 1], [1, 1, 1]],
-    # tf.reduce_sum(a, 1, keep_dims=True) = [[3], [3]], shape=(2, 1)
-    # tf.reduce_sum(a, 0, keep_dims=True) = [2, 2, 2], shape=(1, 3)
+    # tf.reduce_sum(a, 1, keepdims=True) = [[3], [3]], shape=(2, 1)
+    # tf.reduce_sum(a, 0, keepdims=True) = [2, 2, 2], shape=(1, 3)
     # 这里大小为(n, 1), 其中n为样本数(行数)
-    linear_terms = tf.add(w0, tf.reduce_sum(tf.multiply(w, X), 1, keep_dims=True))
+    linear_terms = tf.add(w0, tf.reduce_sum(tf.multiply(w, X), 1, keepdims=True))
     '''
     x = [[1, 2], 
          [1, 2]]
@@ -162,7 +142,7 @@ if __name__ == '__main__':
                 # 矩阵相乘, 点积法, 在平方, (xv)^2
                 tf.matmul(X, tf.transpose(v)), 2),
             tf.matmul(tf.pow(X, 2), tf.transpose(tf.pow(v, 2)))
-        ), axis=1, keep_dims=True)
+        ), axis=1, keepdims=True)
 
     # 等于linear_term + pair_interactions
     y_hat = tf.add(linear_terms, pair_interactions)
@@ -171,7 +151,7 @@ if __name__ == '__main__':
     lambda_w = tf.constant(0.001, name='lambda_w')
     lambda_v = tf.constant(0.001, name='lambda_v')
     # l2正则项, lambda_w * w^2 + lambda_v * v^2
-    l2_norm = tf.reduct_sum(
+    l2_norm = tf.reduce_sum(
         tf.add(
             tf.multiply(lambda_w, tf.pow(w, 2)),
             tf.multiply(lambda_v, tf.pow(v, 2))
@@ -211,15 +191,6 @@ if __name__ == '__main__':
         # 均方根误差
         RMSE = np.sqrt(np.array(errors).mean())
         print(RMSE)
-
-
-
-
-
-
-
-
-
 
 
 

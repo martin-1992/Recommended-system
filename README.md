@@ -37,5 +37,9 @@ Large-scale Parallel Collaborative Filtering for the Netflix Prize <br />
 资料主要参考美团这篇：https://tech.meituan.com/deep-understanding-of-ffm-principles-and-practices.html <br >
 Factorization Machines: http://www.algo.uni-konstanz.de/members/rendle/pdf/Rendle2010FM.pdf
 
+代码参考：<br >
+https://github.com/princewen/tensorflow_practice/blob/master/recommendation/recommendation-FM-demo/FM_model.py  <br >
+https://github.com/babakx/fm_tensorflow/blob/master/fm_tensorflow.ipynb <br >
+
 
 

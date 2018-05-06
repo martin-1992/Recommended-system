@@ -64,9 +64,10 @@ def inference(input_x, input_x_field, zero_weights, one_dim_weights, third_weigh
     # w_{v1, v2}, 其中v1为特征数量n, v2为特征域数量f
     third_value = tf.Variable(0.0, dtype=tf.float32)
     input_shape = input_x_size
-    #
+    # input_shape: 输入变量数, 两两变量组合, 上三角矩阵
     for i in range(input_shape):
         feature_index1 = i
+        # 该变量所属的特征域
         field_index1 = int(input_x_field[i])
         for j in range(i+1, input_shape):
             feature_index2 = j
@@ -75,18 +76,18 @@ def inference(input_x, input_x_field, zero_weights, one_dim_weights, third_weigh
             # [feature_index1, field_index2, 2], [feature_index1, field_index2, 3]
             # 第i个变量和第i+1个变量对应的特征域, 第i个变量和第i+2个变量对应的特征域, 以此类推
             # 第i个变量和第i+n个变量对应的特征域, convert_to_tensor转为张量
+            # vector_dimension为隐向量的长度, vector_left的维度大小为nfk
+            # n为特征数, f为特征域, k为隐向量长度
             vector_left = tf.convert_to_tensor([[feature_index1, field_index2, i] for i in range(vector_dimension)])
             '''
-            a = tf.Variable([[1,2,3,4,5,6,7,8,9,10]])
-            y = tf.Variable([0,2])
-            p = tf.gather_nd(a,y) 
+            data = np.reshape(np.arange(30), [5, 6])
+            x = tf.constant(data)
+            result = tf.gather_nd(x, [1, 2])
             with tf.Session() as sess:
-                print(sess.run(p))
-            
-            sess = tf.Session()
-            print(sess.run(p))
+                print(sess.run(result))
             '''
             weight_left = tf.gather_nd(third_weight, vector_left)
+            # 删除大小为1的维度, 比如shape=[2, 3, 1] -> [2, 3]
             weight_left_after_cut = tf.squeeze(weight_left)
 
             vector_right = tf.convert_to_tensor([[feature_index2, field_index1, i] for i in range(vector_dimension)])
@@ -95,6 +96,7 @@ def inference(input_x, input_x_field, zero_weights, one_dim_weights, third_weigh
 
             temp_value = tf.reduce_sum(tf.multiply(weight_left_after_cut, weight_right_after_cut))
 
+            # 第i个变量, 第j个变量
             indices2 = [i]
             indices3 = [j]
 
@@ -104,6 +106,7 @@ def inference(input_x, input_x_field, zero_weights, one_dim_weights, third_weigh
             product = tf.reduct_sum(tf.multiply(xi, xj))
             second_item_val = tf.multiply(temp_value, product)
 
+            # 把third_value变为third_value+second_item_val
             tf.assign(third_value, tf.add(third_value, second_item_val))
     return tf.add(first_two_value, third_value)
 
@@ -155,36 +158,36 @@ if __name__ == '__main__':
     third_weight = createTwoDimensionWeight(input_x_size,
                                             field_size,
                                             vector_dimension)
-    #
+    # 预测y值, 偏差 + 一次项 + 二次项
     y = inference(input_x, train_x_field, zero_weights,
                   one_dim_weights, third_weight)
 
-
-
+    # L2正则项
     l2_norm = tf.reduce_sum(
         tf.add(
-            tf.multiply(lambda_w, tf.pow(oneDimWeights, 2)),
-            tf.reduce_sum(tf.multiply(lambda_v, tf.pow(thirdWeight, 2)),axis=[1,2])
+            tf.multiply(lambda_w, tf.pow(one_dim_weights, 2)),
+            tf.reduce_sum(tf.multiply(lambda_v, tf.pow(third_weight, 2)), axis=[1,2])
         )
     )
-
-    loss = tf.log(1 + tf.exp(input_y * y_)) + l2_norm
-
+    # 损失函数, input_y为真实y值
+    loss = tf.log(1 + tf.exp(input_y * y)) + l2_norm
+    # 使用梯度下降, 最小化损失函数
     train_step = tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(loss)
 
     saver = tf.train.Saver()
     with tf.Session() as sess:
+        # 参数初始化
         sess.run(tf.global_variables_initializer())
         for i in range(total_plan_train_steps):
             for t in range(all_data_size):
                 input_x_batch = train_x[t]
                 input_y_batch = train_y[t]
-                predict_loss,_, steps = sess.run([loss,train_step, global_step],
+                predict_loss, _ , steps = sess.run([loss, train_step, global_step],
                                                feed_dict={input_x: input_x_batch, input_y: input_y_batch})
 
                 print("After  {step} training   step(s)   ,   loss    on    training    batch   is  {predict_loss} "
                       .format(step=steps, predict_loss=predict_loss))
-
+                # 保存
                 saver.save(sess, os.path.join(MODEL_SAVE_PATH, MODEL_NAME), global_step=steps)
                 writer = tf.summary.FileWriter(os.path.join(MODEL_SAVE_PATH, MODEL_NAME), tf.get_default_graph())
                 writer.close()

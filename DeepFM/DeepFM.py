@@ -1,13 +1,10 @@
 
 import numpy as np
-import pandas as pd
 import tensorflow as tf
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.metrics import roc_auc_score
 from time import time
 from tensorflow.contrib.layers.python.layers import batch_norm as batch_norm
-
-
 
 
 class DeepFM(BaseEstimator, TransformerMixin):
@@ -17,13 +14,14 @@ class DeepFM(BaseEstimator, TransformerMixin):
                  deep_layers_activation=tf.nn.relu,
                  epoch=10, batch_size=256,
                  learning_rate=0.001, optimizer_type="adam",
-                 batch_norm=0, batch_norm_decay=0.995,
+                 batch_norm=False, batch_norm_decay=0.995,
                  verbose=False, random_seed=2016,
                  use_fm=True, use_deep=True,
                  loss_type="logloss", eval_metric=roc_auc_score,
                  l2_reg=0.0, greater_is_better=True):
 
         # 需要use_fm或use_deep, 其中一个为True
+        # 两者为True, 即为deepFM
         assert (use_fm or use_deep)
         # 损失类型需为以下两种
         assert loss_type in ['logloss', 'mse'], \
@@ -35,37 +33,33 @@ class DeepFM(BaseEstimator, TransformerMixin):
         self.field_size = field_size
         # 隐向量长度, 标记为K
         self.embedding_size = embedding_size
-
-        #
+        # FM网络的dropout
         self.dropout_fm = dropout_fm
-        #
+        # 深层网络的神经元层数, 如[32, 32], 两层神经元层, 每层32个神经元
         self.deep_layers = deep_layers
-        #
+        # 深层网络的dropout
         self.droppout_deep = dropout_deep
-        #
+        # 深层网络的激活函数, 默认relu
         self.deep_layers_activation = deep_layers_activation
-        #
+        # 使用FM, use_fm=True
         self.use_fm = use_fm
-        #
+        # 使用深层网络, use_deep=True
         self.use_deep = use_deep
-        #
+        # 对损失函数加上正则项,
         self.l2_reg = l2_reg
-
-        #
+        # 迭代次数
         self.epoch = epoch
-        #
+        # mini-batch, 批量处理分割数据集, 用于梯度下降
         self.batch_size = batch_size
         # 学习速率
         self.learning_rate = learning_rate
         # 优化方法
         self.optimizer_type = optimizer_type
-
-        #
+        # batch_norm=True, 则对每层网络使用归一化处理
         self.batch_norm = batch_norm
-        #
+        # 归一化层参数
         self.batch_norm_decay = batch_norm_decay
-
-        #
+        # 显示进度信息
         self.verbose = verbose
         # 随机种子
         self.random_seed = random_seed
@@ -73,11 +67,11 @@ class DeepFM(BaseEstimator, TransformerMixin):
         self.loss_type = loss_type
         # 评价指标
         self.eval_metric = eval_metric
-        #
+        # 结果是越大越好, 还是越小越好, 用于选择最佳训练结果
         self.greater_is_better = greater_is_better
-        #
+        # 保存训练集和验证集的结果
         self.train_result, self.valid_result = [], []
-
+        # 初始化数据流图
         self._init_graph()
 
     # 初始化数据流图
@@ -96,13 +90,13 @@ class DeepFM(BaseEstimator, TransformerMixin):
                                              name='feat_value')
             # None * 1
             self.label = tf.placeholder(tf.float32, shape=[None, 1], name='label')
-            #
+            # 对FM使用dropout
             self.dropout_keep_fm = tf.placeholder(tf.float32, shape=[None], name='dropout_keep_fm')
-            #
+            # 对深层网络使用dropout
             self.dropout_keep_deep = tf.placeholder(tf.float32, shape=[None], name='dropout_keep_deep')
-            #
+            # 用于归一化层
             self.train_phase = tf.placeholder(tf.bool, name='train_phase')
-            #
+            # 深层网络的权重
             self.weights = self._initialize_weights()
 
             # 模型, 进行嵌入操作, None * F * K
@@ -162,7 +156,7 @@ class DeepFM(BaseEstimator, TransformerMixin):
                 '''
                 if self.batch_norm:
                     # None * layer[i] * 1
-                    self.y_deep = self.batch_norm_layers(self.y_deep, train_phase=self.train_phase,
+                    self.y_deep = self.batch_norm_layer(self.y_deep, train_phase=self.train_phase,
                                                          scope_bn='bn_%d'%i)
                     self.y_deep = self.deep_layers_activation(self.y_deep)
                     # 对每一层进行dropout
@@ -195,6 +189,7 @@ class DeepFM(BaseEstimator, TransformerMixin):
             if self.l2_reg > 0:
                 self.loss += tf.contrib.layers.l2_regularizer(
                         self.l2_reg)(self.weights['concat_projection'])
+                # 如果使用深层网络, 则加上每层网络的正则项
                 if self.use_deep:
                     for i in range(len(self.deep_layers)):
                         self.loss += tf.contrib.layers.l2_regularizer(
@@ -270,7 +265,6 @@ class DeepFM(BaseEstimator, TransformerMixin):
         weights['bias_0'] = tf.Variable(np.random.normal(loc=0, scale=glorot,
                                 size=(1, self.deep_layers[0])), dtype=np.float32)
 
-
         for i in range(1, num_layer):
             # 标准差
             glorot = np.sqrt(2.0 / (self.deep_layers[i-1] + self.deep_layers[i]))
@@ -307,7 +301,7 @@ class DeepFM(BaseEstimator, TransformerMixin):
         z = tf.cond(train_phase, lambda: bn_train, lambda: bn_inference)
         return z
 
-    # mini-batch, 梯度下降批量处理
+    # mini-batch, 将数据集切分用于梯度下降批量
     def get_batch(self, Xi, Xv, y, batch_size, index):
         start = index * batch_size
         end = (index+1) * batch_size
@@ -332,7 +326,7 @@ class DeepFM(BaseEstimator, TransformerMixin):
                      self.dropout_keep_fm: self.dropout_fm,
                      self.dropout_keep_deep: self.droppout_deep,
                      self.train_phase: True}
-        #
+        # 损失函数
         loss, opt = self.sess.run((self.loss, self.optimizer), feed_dict=feed_dict)
         return loss
 
@@ -388,62 +382,74 @@ class DeepFM(BaseEstimator, TransformerMixin):
             if has_valid and early_stopping and self.training_termination(self.valid_result):
                 break
 
-
-
-        # fit a few more epoch on train+valid until result reaches the best_train_score
+        # 重新训练, 使用验证集的最佳迭代次数在训练集+验证集上训练, 直到结果达到最佳训练结果
         if has_valid and refit:
+            # greater_is_better=True, 结果越大越好
             if self.greater_is_better:
+                # 验证集结果的最大值
                 best_valid_score = max(self.valid_result)
+            # greater_is_better=False, 结果越小越好
             else:
                 best_valid_score = min(self.valid_result)
+            # 验证集最佳结果对应的迭代次数
             best_epoch = self.valid_result.index(best_valid_score)
+            # 输出训练集的最佳结果
             best_train_score = self.train_result[best_epoch]
+            # 合并训练集和验证集
             Xi_train = Xi_train + Xi_valid
             Xv_train = Xv_train + Xv_valid
             y_train = y_train + y_valid
             for epoch in range(100):
+                # 打乱数据集
                 self.shuffle_in_unison_scary(Xi_train, Xv_train, y_train)
+                # 计算需要mini-batch的次数
                 total_batch = int(len(y_train) / self.batch_size)
                 for i in range(total_batch):
-                    Xi_batch, Xv_batch, y_batch = self.get_batch(Xi_train, Xv_train, y_train,
-                                                                self.batch_size, i)
+                    # 切分数据集, 用于mini-batch的梯度下降
+                    Xi_batch, Xv_batch, y_batch = self.get_batch(Xi_train, Xv_train, y_train, self.batch_size, i)
+                    # 训练模型
                     self.fit_on_batch(Xi_batch, Xv_batch, y_batch)
-                # check
+                # 模型评估
                 train_result = self.evaluate(Xi_train, Xv_train, y_train)
+                # 训练集+验证集的结果与之前使用训练集的最佳结果小于0.001
+                # 结果越大越好, 即greater_is_better=True, 并且训练集+验证集的结果大于使用训练集的最佳结果
+                # 结果越小越好, 即greater_is_better=False, 并且训练集+验证集的结果小于使用训练集的最佳结果
                 if abs(train_result - best_train_score) < 0.001 or \
-                    (self.greater_is_better and train_result > best_train_score) or \
-                    ((not self.greater_is_better) and train_result < best_train_score):
+                        (self.greater_is_better and train_result > best_train_score) or \
+                        ((not self.greater_is_better) and train_result < best_train_score):
                     break
 
-
-    
-
+    # 训练终止
+    # 终止条件: greater_is_better=True, 即结果越大越好时,
+    # 当迭代次数大于5次时, 即验证集的结果列表大于5个时, 计算最近5次迭代的结果
+    # 如果最近5次的结果都一次比一次小, 则停止训练. 反之亦然
     def training_termination(self, valid_result):
         if len(valid_result) > 5:
             if self.greater_is_better:
-                if valid_result[-1] < valid_result[-2] and \
-                    valid_result[-2] < valid_result[-3] and \
-                    valid_result[-3] < valid_result[-4] and \
-                    valid_result[-4] < valid_result[-5]:
+                if (valid_result[-1] < valid_result[-2]) and (
+                        valid_result[-2] < valid_result[-3]) and (
+                        valid_result[-3] < valid_result[-4]) and (
+                        valid_result[-4] < valid_result[-5]):
                     return True
             else:
-                if valid_result[-1] > valid_result[-2] and \
-                    valid_result[-2] > valid_result[-3] and \
-                    valid_result[-3] > valid_result[-4] and \
-                    valid_result[-4] > valid_result[-5]:
+                if valid_result[-1] > valid_result[-2] and (
+                        valid_result[-2] > valid_result[-3]) and (
+                        valid_result[-3] > valid_result[-4]) and (
+                        valid_result[-4] > valid_result[-5]):
                     return True
         return False
 
-
+    #
     def predict(self, Xi, Xv):
         """
         :param Xi: list of list of feature indices of each sample in the dataset
         :param Xv: list of list of feature values of each sample in the dataset
         :return: predicted probability of each sample
         """
-        # dummy y
+        # y值哑变量
         dummy_y = [1] * len(Xi)
         batch_index = 0
+        # 数据集切分
         Xi_batch, Xv_batch, y_batch = self.get_batch(Xi, Xv, dummy_y, self.batch_size, batch_index)
         y_pred = None
         while len(Xi_batch) > 0:
@@ -457,20 +463,19 @@ class DeepFM(BaseEstimator, TransformerMixin):
             batch_out = self.sess.run(self.out, feed_dict=feed_dict)
 
             if batch_index == 0:
-                y_pred = np.reshape(batch_out, (num_batch,))
+                y_pred = np.reshape(batch_out, (num_batch, ))
             else:
-                y_pred = np.concatenate((y_pred, np.reshape(batch_out, (num_batch,))))
+                y_pred = np.concatenate((y_pred, np.reshape(batch_out, (num_batch, ))))
 
             batch_index += 1
+            # 递归训练
             Xi_batch, Xv_batch, y_batch = self.get_batch(Xi, Xv, dummy_y, self.batch_size, batch_index)
-
         return y_pred
 
 
     # 预测y值, 并使用评价指标进行评估
     def evaluate(self, Xi, Xv, y):
         '''
-
         :param Xi: list of list of feature indices of each sample in the dataset
         :param Xv: list of list of feature values of each sample in the dataset
         :param y: label of each sample in the dataset

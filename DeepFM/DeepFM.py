@@ -38,7 +38,7 @@ class DeepFM(BaseEstimator, TransformerMixin):
         # 深层网络的神经元层数, 如[32, 32], 两层神经元层, 每层32个神经元
         self.deep_layers = deep_layers
         # 深层网络的dropout
-        self.droppout_deep = dropout_deep
+        self.dropout_deep = dropout_deep
         # 深层网络的激活函数, 默认relu
         self.deep_layers_activation = deep_layers_activation
         # 使用FM, use_fm=True
@@ -324,7 +324,7 @@ class DeepFM(BaseEstimator, TransformerMixin):
                      self.feat_value: Xv,
                      self.label: y,
                      self.dropout_keep_fm: self.dropout_fm,
-                     self.dropout_keep_deep: self.droppout_deep,
+                     self.dropout_keep_deep: self.dropout_deep,
                      self.train_phase: True}
         # 损失函数
         loss, opt = self.sess.run((self.loss, self.optimizer), feed_dict=feed_dict)

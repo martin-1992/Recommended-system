@@ -41,5 +41,8 @@ Factorization Machines: http://www.algo.uni-konstanz.de/members/rendle/pdf/Rendl
 https://github.com/princewen/tensorflow_practice/blob/master/recommendation/recommendation-FM-demo/FM_model.py  <br >
 https://github.com/babakx/fm_tensorflow/blob/master/fm_tensorflow.ipynb <br >
 
+### deepFM算法：
+源代码参考：https://github.com/ChenglongChen/tensorflow-DeepFM
+
 
 
